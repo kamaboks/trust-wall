@@ -66,7 +66,7 @@ export default function IntroAnimation({ onComplete }) {
   // After sweep, go to reveal
   useEffect(() => {
     if (phase !== "sweep") return;
-    const t = setTimeout(() => setPhase("reveal"), 900);
+    const t = setTimeout(() => setPhase("reveal"), 700);
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -90,13 +90,16 @@ export default function IntroAnimation({ onComplete }) {
 
       {/* Notes layer */}
       <AnimatePresence>
-        {phase !== "reveal" && visibleNotes.filter(Boolean).map((note) => (
+        {visibleNotes.filter(Boolean).map((note) => (
           <motion.div
             key={note.id}
             initial={{ opacity: 0, scale: 0.7, rotate: note.r }}
-            animate={{ opacity: 1, scale: 1, rotate: note.r }}
-            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.05 } }}
-            transition={{ type: "spring", stiffness: 280, damping: 22, duration: 0.35 }}
+            animate={
+              phase === "sweep"
+                ? { opacity: 0, y: 600, rotate: note.r * 3, transition: { duration: 0.55, ease: [0.4, 0, 1, 1], delay: Math.random() * 0.18 } }
+                : { opacity: 1, scale: 1, rotate: note.r }
+            }
+            transition={{ type: "spring", stiffness: 280, damping: 22 }}
             className="absolute rounded-2xl p-4 w-[190px]"
             style={{
               left: note.x,
@@ -114,19 +117,6 @@ export default function IntroAnimation({ onComplete }) {
             </p>
           </motion.div>
         ))}
-      </AnimatePresence>
-
-      {/* Sweep overlay — white wipe left-to-right */}
-      <AnimatePresence>
-        {phase === "sweep" && (
-          <motion.div
-            className="absolute inset-0 z-10"
-            style={{ backgroundColor: "#fafafa", transformOrigin: "left center" }}
-            initial={{ scaleX: 0 }}
-            animate={{ scaleX: 1 }}
-            transition={{ duration: 0.7, ease: [0.77, 0, 0.18, 1] }}
-          />
-        )}
       </AnimatePresence>
 
       {/* Reveal text */}
