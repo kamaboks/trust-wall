@@ -49,13 +49,13 @@ export default function IntroAnimation({ onComplete }) {
 
     let i = 0;
     noteQueue.current = setInterval(() => {
-      setVisibleNotes(prev => [...prev, SEED_NOTES[i]]);
-      i++;
       if (i >= SEED_NOTES.length) {
         clearInterval(noteQueue.current);
-        // After all notes shown, wait then sweep
         setTimeout(() => setPhase("sweep"), 800);
+        return;
       }
+      setVisibleNotes(prev => [...prev, SEED_NOTES[i]]);
+      i++;
     }, 80);
 
     return () => clearInterval(noteQueue.current);
