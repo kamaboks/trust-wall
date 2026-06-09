@@ -62,10 +62,10 @@ module.exports = {
   			}
   		},
   		fontFamily: {
-  			heading: ['var(--font-heading)'],
-  			body: ['var(--font-body)'],
-  			display: ['var(--font-display)'],
-  			mono: ['var(--font-mono)']
+  			heading: ['DM Serif Display', 'Georgia', 'serif'],
+  			body: ['DM Sans', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			display: ['DM Serif Display', 'Georgia', 'serif'],
+  			mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
   		},
   
   		keyframes: {

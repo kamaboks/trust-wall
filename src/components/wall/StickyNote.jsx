@@ -1,123 +1,125 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Siren, Brain, Handshake } from "lucide-react";
+import { Share2 } from "lucide-react";
 
 const NOTE_STYLES = {
-  yellow: { bg: "#FBBF24", text: "#78350F", shadow: "rgba(251,191,36,0.3)" },
-  pink: { bg: "#F472B6", text: "#831843", shadow: "rgba(244,114,182,0.3)" },
-  blue: { bg: "#60A5FA", text: "#1E3A5F", shadow: "rgba(96,165,250,0.3)" },
-  green: { bg: "#34D399", text: "#064E3B", shadow: "rgba(52,211,153,0.3)" },
-  orange: { bg: "#FB923C", text: "#7C2D12", shadow: "rgba(251,146,60,0.3)" },
-  violet: { bg: "#A78BFA", text: "#3B0764", shadow: "rgba(167,139,250,0.3)" },
-  rose: { bg: "#FB7185", text: "#881337", shadow: "rgba(251,113,133,0.3)" },
-  cyan: { bg: "#22D3EE", text: "#083344", shadow: "rgba(34,211,238,0.3)" },
-  lime: { bg: "#A3E635", text: "#365314", shadow: "rgba(163,230,53,0.3)" },
-  amber: { bg: "#FCD34D", text: "#78350F", shadow: "rgba(252,211,77,0.3)" },
+  yellow: { bg: "#FEF3C7", border: "#FDE68A", text: "#1a1a1a" },
+  pink:   { bg: "#FCE7F3", border: "#FBCFE8", text: "#1a1a1a" },
+  blue:   { bg: "#DBEAFE", border: "#BFDBFE", text: "#1a1a1a" },
+  green:  { bg: "#D1FAE5", border: "#A7F3D0", text: "#1a1a1a" },
+  orange: { bg: "#FFEDD5", border: "#FED7AA", text: "#1a1a1a" },
+  violet: { bg: "#EDE9FE", border: "#DDD6FE", text: "#1a1a1a" },
+  rose:   { bg: "#FFE4E6", border: "#FECDD3", text: "#1a1a1a" },
+  cyan:   { bg: "#CFFAFE", border: "#A5F3FC", text: "#1a1a1a" },
+  lime:   { bg: "#ECFCCB", border: "#D9F99D", text: "#1a1a1a" },
+  amber:  { bg: "#FEF3C7", border: "#FDE68A", text: "#1a1a1a" },
 };
 
-export default function StickyNote({ submission, onVote, onShare, userVotes, scale = 1 }) {
+const VOTE_EMOJIS = {
+  unhinged: "🔥",
+  think:    "💭",
+  trust:    "✨",
+};
+
+export default function StickyNote({ submission, onVote, onShare, userVotes }) {
   const [isHovered, setIsHovered] = useState(false);
   const color = NOTE_STYLES[submission.note_color] || NOTE_STYLES.yellow;
   const rotation = submission.note_rotation || 0;
   const isTop10 = submission.rank > 0 && submission.rank <= 10;
 
   const voteButtons = [
-    { key: "unhinged", icon: Siren, label: "Unhinged", count: submission.votes_unhinged || 0 },
-    { key: "think", icon: Brain, label: "Made Me Think", count: submission.votes_think || 0 },
-    { key: "trust", icon: Handshake, label: "I'd Do This", count: submission.votes_trust || 0 },
+    { key: "unhinged", count: submission.votes_unhinged || 0 },
+    { key: "think",    count: submission.votes_think    || 0 },
+    { key: "trust",    count: submission.votes_trust    || 0 },
   ];
 
   return (
     <motion.div
-      className="absolute cursor-pointer select-none"
+      className="absolute select-none"
       style={{
         left: submission.note_x,
         top: submission.note_y,
         zIndex: isHovered ? 50 : 1,
       }}
-      initial={{ opacity: 0, scale: 0.5, rotate: rotation }}
+      initial={{ opacity: 0, scale: 0.8, rotate: rotation }}
       animate={{
         opacity: 1,
-        scale: isHovered ? 1.08 : 1,
-        rotate: isHovered ? 0 : rotation,
+        scale: isHovered ? 1.04 : 1,
+        rotate: isHovered ? rotation * 0.3 : rotation,
       }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      transition={{ type: "spring", stiffness: 260, damping: 28 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className="relative w-[220px] p-4 rounded-sm"
+        className="relative w-[200px] p-4 rounded-2xl cursor-pointer"
         style={{
           backgroundColor: color.bg,
-          color: color.text,
+          border: `1.5px solid ${color.border}`,
           boxShadow: isHovered
-            ? `0 20px 40px ${color.shadow}, 0 0 0 2px rgba(255,255,255,0.1)`
-            : `4px 4px 12px rgba(0,0,0,0.3)`,
-          transition: "box-shadow 0.3s ease",
+            ? "0 12px 32px rgba(0,0,0,0.10)"
+            : "0 2px 8px rgba(0,0,0,0.06)",
+          transition: "box-shadow 0.2s ease",
         }}
       >
-        {/* Tape effect */}
-        <div
-          className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 h-5 rounded-sm opacity-40"
-          style={{ backgroundColor: "rgba(255,255,255,0.6)" }}
-        />
-
         {/* Rank badge */}
         {isTop10 && (
-          <div className="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-black text-white flex items-center justify-center font-display font-bold text-xs shadow-lg border-2 border-white/20">
+          <div
+            className="absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold"
+            style={{ backgroundColor: color.border, color: "#1a1a1a" }}
+          >
             #{submission.rank}
           </div>
         )}
 
         {/* Answer */}
-        <p className="font-display font-semibold text-sm leading-snug mb-3 break-words" style={{ color: color.text }}>
-          "{submission.answer}"
+        <p
+          className="text-[13px] leading-snug mb-3 break-words"
+          style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400, color: color.text }}
+        >
+          {submission.answer}
         </p>
 
         {/* Alias */}
         {submission.alias && (
-          <p className="text-xs opacity-60 mb-3 font-body" style={{ color: color.text }}>
+          <p
+            className="text-[11px] mb-3 opacity-50"
+            style={{ fontFamily: "'DM Sans', sans-serif", color: color.text }}
+          >
             — {submission.alias}
           </p>
         )}
 
-        {/* Vote buttons */}
-        <div className="flex items-center gap-1.5 mb-2">
-          {voteButtons.map(({ key, icon: Icon, count }) => {
+        {/* Votes */}
+        <div className="flex items-center gap-2">
+          {voteButtons.map(({ key, count }) => {
             const voted = userVotes?.[submission.id]?.includes(key);
             return (
               <button
                 key={key}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onVote(submission.id, key);
-                }}
-                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold transition-all"
+                onClick={(e) => { e.stopPropagation(); onVote(submission.id, key); }}
+                className="flex items-center gap-0.5 text-[11px] rounded-full px-1.5 py-0.5 transition-all"
                 style={{
-                  backgroundColor: voted ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.08)",
+                  backgroundColor: voted ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.05)",
                   color: color.text,
-                  transform: voted ? "scale(1.05)" : "scale(1)",
+                  fontFamily: "'DM Sans', sans-serif",
+                  opacity: voted ? 1 : 0.7,
                 }}
               >
-                <Icon size={11} />
-                {count}
+                <span>{VOTE_EMOJIS[key]}</span>
+                <span className="ml-0.5">{count}</span>
               </button>
             );
           })}
-        </div>
 
-        {/* Share */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onShare(submission);
-          }}
-          className="flex items-center gap-1 text-[10px] opacity-50 hover:opacity-100 transition-opacity font-body"
-          style={{ color: color.text }}
-        >
-          <Share2 size={10} />
-          Share
-        </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onShare(submission); }}
+            className="ml-auto opacity-30 hover:opacity-70 transition-opacity"
+            style={{ color: color.text }}
+          >
+            <Share2 size={11} />
+          </button>
+        </div>
       </div>
     </motion.div>
   );

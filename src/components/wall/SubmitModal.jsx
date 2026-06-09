@@ -1,16 +1,12 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 
 const EXAMPLES = [
-  "Deciding whether I should text my ex",
+  "Deciding whether to text my ex",
   "Naming my startup",
-  "Choosing my next city",
   "Picking my wedding playlist",
+  "Choosing what city to move to",
   "Telling me when to quit my job",
 ];
 
@@ -23,8 +19,8 @@ export default function SubmitModal({ isOpen, onClose, onSubmit }) {
 
   const validate = () => {
     const errs = {};
-    if (!answer.trim()) errs.answer = "Please share your answer";
-    if (!email.trim()) errs.email = "Email is required";
+    if (!answer.trim()) errs.answer = "Required";
+    if (!email.trim()) errs.email = "Required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Invalid email";
     return errs;
   };
@@ -32,145 +28,132 @@ export default function SubmitModal({ isOpen, onClose, onSubmit }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setIsSubmitting(true);
     await onSubmit({ answer: answer.trim(), email: email.trim(), alias: alias.trim() || null });
     setIsSubmitting(false);
-    setAnswer("");
-    setEmail("");
-    setAlias("");
-    setErrors({});
+    setAnswer(""); setEmail(""); setAlias(""); setErrors({});
   };
-
-  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
-        {/* Modal */}
+      {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 40, scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={onClose}
         >
-          {/* Header accent */}
-          <div className="h-1.5 bg-gradient-to-r from-primary via-accent to-chart-3" />
+          <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px]" />
 
-          <div className="p-6 md:p-8">
-            {/* Close */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X size={20} />
-            </button>
-
-            {/* Title */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={18} className="text-primary" />
-                <span className="text-xs font-mono tracking-wider text-primary uppercase">Your Turn</span>
-              </div>
-              <h2 className="text-2xl font-display font-bold text-foreground leading-tight">
-                What's the wildest thing you'd trust AI with?
-              </h2>
-            </div>
-
-            {/* Examples */}
-            <div className="flex flex-wrap gap-2 mb-6">
-              {EXAMPLES.map((ex) => (
-                <button
-                  key={ex}
-                  onClick={() => setAnswer(ex)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors font-body"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <Label className="text-sm font-body text-muted-foreground mb-1.5 block">
-                  Your answer *
-                </Label>
-                <Textarea
-                  value={answer}
-                  onChange={(e) => { setAnswer(e.target.value); setErrors(prev => ({...prev, answer: undefined})); }}
-                  placeholder="I'd trust AI to..."
-                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground resize-none h-24 font-body"
-                  maxLength={280}
-                />
-                <div className="flex justify-between mt-1">
-                  {errors.answer && <span className="text-xs text-destructive">{errors.answer}</span>}
-                  <span className="text-xs text-muted-foreground ml-auto">{answer.length}/280</span>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-sm font-body text-muted-foreground mb-1.5 block">
-                  Email *
-                </Label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setErrors(prev => ({...prev, email: undefined})); }}
-                  placeholder="your@email.com"
-                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground font-body"
-                />
-                {errors.email && <span className="text-xs text-destructive mt-1">{errors.email}</span>}
-              </div>
-
-              <div>
-                <Label className="text-sm font-body text-muted-foreground mb-1.5 block">
-                  Name or alias <span className="text-muted-foreground/60">(optional)</span>
-                </Label>
-                <Input
-                  value={alias}
-                  onChange={(e) => setAlias(e.target.value)}
-                  placeholder="Anonymous"
-                  className="bg-secondary border-border text-foreground placeholder:text-muted-foreground font-body"
-                  maxLength={50}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display font-bold py-6 rounded-xl text-base shadow-[0_0_20px_rgba(251,191,36,0.2)] hover:shadow-[0_0_30px_rgba(251,191,36,0.4)] transition-all"
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.97 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.10)] border border-black/5 overflow-hidden"
+          >
+            <div className="p-8">
+              {/* Close */}
+              <button
+                onClick={onClose}
+                className="absolute top-5 right-5 text-foreground/30 hover:text-foreground/60 transition-colors"
               >
-                {isSubmitting ? (
-                  <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Send size={16} className="mr-2" />
-                    Drop It On The Wall
-                  </>
-                )}
-              </Button>
+                <X size={18} />
+              </button>
 
-              <p className="text-[10px] text-center text-muted-foreground/60 font-body">
-                By submitting, you agree to our terms. Your email won't be displayed.
+              {/* Title */}
+              <h2
+                className="text-2xl text-foreground mb-1 leading-snug"
+                style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
+              >
+                Your answer
+              </h2>
+              <p className="text-[13px] text-foreground/40 mb-6" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                What's the wildest thing you'd trust AI with?
               </p>
-            </form>
-          </div>
+
+              {/* Example chips */}
+              <div className="flex flex-wrap gap-1.5 mb-5">
+                {EXAMPLES.map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => setAnswer(ex)}
+                    className="text-[11px] px-3 py-1.5 rounded-full border border-black/8 text-foreground/50 hover:border-black/20 hover:text-foreground/80 transition-all bg-transparent"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Answer */}
+                <div>
+                  <textarea
+                    value={answer}
+                    onChange={(e) => { setAnswer(e.target.value); setErrors(p => ({...p, answer: undefined})); }}
+                    placeholder="I'd trust AI to..."
+                    maxLength={280}
+                    rows={3}
+                    className="w-full resize-none rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-black/25 transition-colors"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  />
+                  <div className="flex justify-between mt-1">
+                    {errors.answer && <span className="text-[11px] text-red-500">{errors.answer}</span>}
+                    <span className="text-[11px] text-foreground/30 ml-auto">{answer.length}/280</span>
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
+                    placeholder="your@email.com"
+                    className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-black/25 transition-colors"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  />
+                  {errors.email && <span className="text-[11px] text-red-500 mt-1 block">{errors.email}</span>}
+                </div>
+
+                {/* Alias */}
+                <div>
+                  <input
+                    value={alias}
+                    onChange={(e) => setAlias(e.target.value)}
+                    placeholder="Name or alias (optional)"
+                    maxLength={50}
+                    className="w-full rounded-xl border border-black/10 bg-black/[0.02] px-4 py-3 text-[14px] text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-black/25 transition-colors"
+                    style={{ fontFamily: "'DM Sans', sans-serif" }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-foreground text-background rounded-xl py-3.5 text-[14px] font-medium hover:opacity-80 transition-opacity disabled:opacity-40"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  {isSubmitting ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                  ) : (
+                    "Drop it on the wall →"
+                  )}
+                </button>
+
+                <p className="text-center text-[11px] text-foreground/25" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                  Your email won't be displayed publicly.
+                </p>
+              </form>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </AnimatePresence>
   );
 }

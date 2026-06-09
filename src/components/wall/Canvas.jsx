@@ -73,12 +73,12 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
     >
-      {/* Grid pattern background */}
+      {/* Dot grid background */}
       <div
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)`,
-          backgroundSize: `${40 * scale}px ${40 * scale}px`,
+          backgroundImage: `radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px)`,
+          backgroundSize: `${32 * scale}px ${32 * scale}px`,
           backgroundPosition: `${offset.x}px ${offset.y}px`,
         }}
       />

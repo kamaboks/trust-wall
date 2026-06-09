@@ -152,13 +152,13 @@ export default function TrustWall() {
   };
 
   return (
-    <div className="fixed inset-0 bg-background overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden" style={{ backgroundColor: "#fafafa" }}>
       {/* Loading state */}
       {isLoading && (
         <div className="absolute inset-0 z-30 flex items-center justify-center">
           <div className="text-center">
-            <div className="w-10 h-10 border-3 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-sm text-muted-foreground font-mono">Loading the wall...</p>
+            <div className="w-6 h-6 border-2 border-black/10 border-t-black/40 rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-[13px] text-foreground/40" style={{ fontFamily: "'DM Sans', sans-serif" }}>Loading...</p>
           </div>
         </div>
       )}
