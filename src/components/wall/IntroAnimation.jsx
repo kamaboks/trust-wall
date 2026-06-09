@@ -48,17 +48,19 @@ export default function IntroAnimation({ onComplete }) {
     if (phase !== "filling") return;
 
     let i = 0;
-    noteQueue.current = setInterval(() => {
+    const interval = setInterval(() => {
       if (i >= SEED_NOTES.length) {
-        clearInterval(noteQueue.current);
+        clearInterval(interval);
         setTimeout(() => setPhase("sweep"), 800);
         return;
       }
-      setVisibleNotes(prev => [...prev, SEED_NOTES[i]]);
+      const note = SEED_NOTES[i];
       i++;
+      if (note) setVisibleNotes(prev => [...prev, note]);
     }, 80);
+    noteQueue.current = interval;
 
-    return () => clearInterval(noteQueue.current);
+    return () => clearInterval(interval);
   }, [phase]);
 
   // After sweep, go to reveal
@@ -88,7 +90,7 @@ export default function IntroAnimation({ onComplete }) {
 
       {/* Notes layer */}
       <AnimatePresence>
-        {phase !== "reveal" && visibleNotes.map((note) => (
+        {phase !== "reveal" && visibleNotes.filter(Boolean).map((note) => (
           <motion.div
             key={note.id}
             initial={{ opacity: 0, scale: 0.7, rotate: note.r }}
@@ -119,7 +121,7 @@ export default function IntroAnimation({ onComplete }) {
         {phase === "sweep" && (
           <motion.div
             className="absolute inset-0 z-10"
-            style={{ backgroundColor: "#fafafa", originX: 0 }}
+            style={{ backgroundColor: "#fafafa", transformOrigin: "left center" }}
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.7, ease: [0.77, 0, 0.18, 1] }}
