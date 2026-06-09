@@ -5,6 +5,7 @@ import Canvas from "@/components/wall/Canvas";
 import HeroOverlay from "@/components/wall/HeroOverlay";
 import SubmitModal from "@/components/wall/SubmitModal";
 import ShareModal from "@/components/wall/ShareModal";
+import IntroAnimation from "@/components/wall/IntroAnimation";
 import { useToast } from "@/components/ui/use-toast";
 
 const NOTE_COLORS = ["yellow", "pink", "blue", "green", "orange", "violet", "rose", "cyan", "lime", "amber"];
@@ -40,8 +41,14 @@ function generatePosition(index, total) {
 }
 
 export default function TrustWall() {
+  const [introComplete, setIntroComplete] = useState(() => !!sessionStorage.getItem("tw_intro_seen"));
   const [showSubmit, setShowSubmit] = useState(false);
   const [shareSubmission, setShareSubmission] = useState(null);
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem("tw_intro_seen", "1");
+    setIntroComplete(true);
+  };
   const [userVotes, setUserVotes] = useState(getUserVotes);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -150,6 +157,10 @@ export default function TrustWall() {
   const handleShare = (submission) => {
     setShareSubmission(submission);
   };
+
+  if (!introComplete) {
+    return <IntroAnimation onComplete={handleIntroComplete} />;
+  }
 
   return (
     <div className="fixed inset-0 overflow-hidden" style={{ backgroundColor: "#fafafa" }}>
