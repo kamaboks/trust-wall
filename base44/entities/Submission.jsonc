@@ -1,0 +1,74 @@
+{
+  "name": "Submission",
+  "type": "object",
+  "properties": {
+    "answer": {
+      "type": "string",
+      "description": "The user's answer to the question"
+    },
+    "email": {
+      "type": "string",
+      "description": "Participant email address"
+    },
+    "alias": {
+      "type": "string",
+      "description": "Optional name or alias"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "hidden",
+        "removed"
+      ],
+      "default": "approved",
+      "description": "Moderation status"
+    },
+    "votes_unhinged": {
+      "type": "number",
+      "default": 0,
+      "description": "Unhinged vote count"
+    },
+    "votes_think": {
+      "type": "number",
+      "default": 0,
+      "description": "Made Me Think vote count"
+    },
+    "votes_trust": {
+      "type": "number",
+      "default": 0,
+      "description": "I'd Actually Do This vote count"
+    },
+    "total_score": {
+      "type": "number",
+      "default": 0,
+      "description": "Total score across all categories"
+    },
+    "rank": {
+      "type": "number",
+      "default": 0,
+      "description": "Current overall rank"
+    },
+    "note_color": {
+      "type": "string",
+      "description": "Color assigned to the sticky note"
+    },
+    "note_rotation": {
+      "type": "number",
+      "description": "Rotation angle for the sticky note"
+    },
+    "note_x": {
+      "type": "number",
+      "description": "X position on canvas"
+    },
+    "note_y": {
+      "type": "number",
+      "description": "Y position on canvas"
+    }
+  },
+  "required": [
+    "answer",
+    "email"
+  ]
+}

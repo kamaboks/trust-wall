@@ -1,0 +1,28 @@
+{
+  "name": "Vote",
+  "type": "object",
+  "properties": {
+    "submission_id": {
+      "type": "string",
+      "description": "ID of the submission voted on"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "unhinged",
+        "think",
+        "trust"
+      ],
+      "description": "Vote category"
+    },
+    "voter_fingerprint": {
+      "type": "string",
+      "description": "Browser fingerprint to prevent duplicate votes"
+    }
+  },
+  "required": [
+    "submission_id",
+    "category",
+    "voter_fingerprint"
+  ]
+}

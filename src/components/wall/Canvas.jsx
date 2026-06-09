@@ -1,0 +1,107 @@
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import StickyNote from "./StickyNote";
+
+export default function Canvas({ submissions, onVote, onShare, userVotes }) {
+  const containerRef = useRef(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const offsetStart = useRef({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
+
+  // Center canvas initially
+  useEffect(() => {
+    if (containerRef.current && submissions.length > 0) {
+      const rect = containerRef.current.getBoundingClientRect();
+      // Find center of all notes
+      let sumX = 0, sumY = 0;
+      submissions.forEach(s => {
+        sumX += (s.note_x || 0) + 110;
+        sumY += (s.note_y || 0) + 80;
+      });
+      const cx = sumX / submissions.length;
+      const cy = sumY / submissions.length;
+      setOffset({
+        x: rect.width / 2 - cx,
+        y: rect.height / 2 - cy,
+      });
+    }
+  }, [submissions.length > 0]);
+
+  const handlePointerDown = useCallback((e) => {
+    if (e.target.closest("button")) return;
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    offsetStart.current = { ...offset };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }, [offset]);
+
+  const handlePointerMove = useCallback((e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    setOffset({
+      x: offsetStart.current.x + dx,
+      y: offsetStart.current.y + dy,
+    });
+  }, [isDragging]);
+
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleWheel = useCallback((e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    setScale(prev => Math.min(2, Math.max(0.3, prev + delta)));
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (el) {
+      el.addEventListener("wheel", handleWheel, { passive: false });
+      return () => el.removeEventListener("wheel", handleWheel);
+    }
+  }, [handleWheel]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-full overflow-hidden relative"
+      style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {/* Grid pattern background */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: `${40 * scale}px ${40 * scale}px`,
+          backgroundPosition: `${offset.x}px ${offset.y}px`,
+        }}
+      />
+
+      {/* Canvas content */}
+      <div
+        className="absolute"
+        style={{
+          transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+          transformOrigin: "0 0",
+        }}
+      >
+        {submissions.map((submission) => (
+          <StickyNote
+            key={submission.id}
+            submission={submission}
+            onVote={onVote}
+            onShare={onShare}
+            userVotes={userVotes}
+            scale={scale}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -67,6 +67,7 @@ module.exports = {
   			display: ['var(--font-display)'],
   			mono: ['var(--font-mono)']
   		},
+  
   		keyframes: {
   			'accordion-down': {
   				from: {
