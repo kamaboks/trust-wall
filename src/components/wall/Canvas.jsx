@@ -50,19 +50,48 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
     setIsDragging(false);
   }, []);
 
-  const handleWheel = useCallback((e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    setScale(prev => Math.min(2, Math.max(0.3, prev + delta)));
+  // Pinch-to-zoom via touch events
+  const lastPinchDist = useRef(null);
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchDist.current = Math.hypot(dx, dy);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      if (lastPinchDist.current) {
+        const delta = dist / lastPinchDist.current;
+        setScale(prev => Math.min(2, Math.max(0.3, prev * delta)));
+      }
+      lastPinchDist.current = dist;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    lastPinchDist.current = null;
   }, []);
 
   useEffect(() => {
     const el = containerRef.current;
     if (el) {
-      el.addEventListener("wheel", handleWheel, { passive: false });
-      return () => el.removeEventListener("wheel", handleWheel);
+      el.addEventListener("touchstart", handleTouchStart, { passive: false });
+      el.addEventListener("touchmove", handleTouchMove, { passive: false });
+      el.addEventListener("touchend", handleTouchEnd);
+      return () => {
+        el.removeEventListener("touchstart", handleTouchStart);
+        el.removeEventListener("touchmove", handleTouchMove);
+        el.removeEventListener("touchend", handleTouchEnd);
+      };
     }
-  }, [handleWheel]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   return (
     <div
