@@ -6,7 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-import TrustWall from './pages/TrustWall';
+import TrustWall from './pages/TrustWall.jsx';
 import Admin from './pages/Admin';
 
 const AuthenticatedApp = () => {

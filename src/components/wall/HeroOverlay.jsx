@@ -50,13 +50,30 @@ export default function HeroOverlay({ onAddAnswer, stats }) {
         </motion.p>
       </div>
 
-      {/* Bottom stats */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-auto pb-6 flex items-center justify-center gap-8">
-        <Stat value={stats.answers} label="answers" />
-        <div className="w-px h-4 bg-foreground/15" />
-        <Stat value={stats.votes} label="votes" />
-        <div className="w-px h-4 bg-foreground/15" />
-        <Stat value="$1K" label="prize" />
+      {/* Bottom — stats + scroll cue */}
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-auto pb-7 flex flex-col items-center gap-5">
+        <div className="flex items-center gap-8">
+          <Stat value={stats.answers} label="answers" />
+          <div className="w-px h-4 bg-foreground/15" />
+          <Stat value={stats.votes} label="votes" />
+          <div className="w-px h-4 bg-foreground/15" />
+          <Stat value="$1K" label="prize" />
+        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+          className="flex flex-col items-center gap-1.5"
+        >
+          <span className="text-[11px] tracking-[0.12em] uppercase text-foreground/25" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            Scroll to explore
+          </span>
+          <motion.div
+            animate={{ y: [0, 5, 0] }}
+            transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+            className="w-px h-5 bg-foreground/20"
+          />
+        </motion.div>
       </div>
     </div>
   );
