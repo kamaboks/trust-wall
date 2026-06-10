@@ -51,18 +51,12 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
   }, []);
 
   const handleWheel = useCallback((e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    setScale(prev => Math.min(2, Math.max(0.3, prev + delta)));
+    // Pan vertically/horizontally on scroll, no zoom
+    setOffset(prev => ({
+      x: prev.x - e.deltaX,
+      y: prev.y - e.deltaY,
+    }));
   }, []);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (el) {
-      el.addEventListener("wheel", handleWheel, { passive: false });
-      return () => el.removeEventListener("wheel", handleWheel);
-    }
-  }, [handleWheel]);
 
   return (
     <div
