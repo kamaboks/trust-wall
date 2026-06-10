@@ -57,10 +57,9 @@ export default function TrustWall() {
 
   const { scrollY } = useScroll({ container: containerRef });
   // Canvas rises from below as user scrolls
-  const canvasY = useTransform(scrollY, [0, window.innerHeight * 0.6], ["100vh", "0vh"]);
-  const canvasOpacity = useTransform(scrollY, [0, window.innerHeight * 0.3], [0, 1]);
-  const heroScale = useTransform(scrollY, [0, window.innerHeight * 0.5], [1, 0.94]);
-  const heroOpacity = useTransform(scrollY, [0, window.innerHeight * 0.4], [1, 0]);
+  const canvasY = useTransform(scrollY, [0, window.innerHeight * 0.8], ["100vh", "0vh"]);
+  const canvasOpacity = useTransform(scrollY, [0, window.innerHeight * 0.4], [0, 1]);
+  const heroOpacity = useTransform(scrollY, [0, window.innerHeight * 0.5], [1, 0]);
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ["submissions"],
@@ -180,7 +179,7 @@ export default function TrustWall() {
 
         {/* Hero text — centred, scales down & fades as you scroll */}
         <motion.div
-          style={{ scale: heroScale, opacity: heroOpacity }}
+          style={{ opacity: heroOpacity }}
           className="flex-1 flex flex-col items-center justify-center text-center px-6"
         >
           <motion.h1
