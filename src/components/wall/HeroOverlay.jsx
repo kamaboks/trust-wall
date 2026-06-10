@@ -1,90 +1,62 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+
 import { Link } from "react-router-dom";
 
 export default function HeroOverlay({ onAddAnswer, stats }) {
   return (
     <div className="pointer-events-none absolute inset-0 z-20">
-      {/* Top */}
-      <div className="absolute top-0 left-0 right-0 pointer-events-auto">
-        <div
-          className="pb-20 pt-8 px-6 md:px-12"
-          style={{
-            background: "linear-gradient(to bottom, rgba(250,250,250,1) 60%, rgba(250,250,250,0))",
-          }}
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-auto flex items-center justify-between px-6 md:px-10 pt-7">
+        <span
+          className="text-[11px] tracking-[0.18em] uppercase text-foreground/35"
+          style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
         >
-          {/* Nav */}
-          <div className="flex items-center justify-between mb-12 max-w-5xl mx-auto">
-            <span
-              className="text-[13px] tracking-[0.15em] uppercase text-foreground/40"
-              style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
-            >
-              Niural AI Labs
-            </span>
-            <Link
-              to="/admin"
-              className="text-[12px] text-foreground/30 hover:text-foreground/60 transition-colors"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
-            >
-              Admin
-            </Link>
-          </div>
+          Niural AI Labs
+        </span>
+        <Link
+          to="/admin"
+          className="text-[11px] tracking-[0.05em] text-foreground/30 hover:text-foreground/60 transition-colors"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+        >
+          Admin
+        </Link>
+      </div>
 
-          {/* Hero */}
-          <div className="max-w-3xl mx-auto text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-4xl md:text-6xl lg:text-7xl text-foreground leading-[1.08] tracking-tight mb-5"
-              style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
-            >
-              What's the wildest thing
-              <br />
-              <em>you'd trust AI with?</em>
-            </motion.h1>
+      {/* Hero — centered, large, minimal */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-auto flex flex-col items-center justify-start pt-20 pb-10 px-6">
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="text-5xl md:text-7xl lg:text-8xl text-foreground text-center leading-[1.05] tracking-tight mb-4"
+          style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
+        >
+          What's the wildest thing
+          <br />
+          <em>you'd trust AI with?</em>
+        </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="text-[15px] text-foreground/50 mb-8 max-w-md mx-auto"
-              style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 400 }}
-            >
-              Add your answer. Vote on others.{" "}
-              <span className="text-foreground/70">$1,000 for the top submission.</span>
-            </motion.p>
-
-            <motion.button
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              onClick={onAddAnswer}
-              className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 rounded-full text-[14px] hover:opacity-80 transition-opacity"
-              style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
-            >
-              <Plus size={15} strokeWidth={2.5} />
-              Add your answer
-            </motion.button>
-          </div>
-        </div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.25 }}
+          className="text-[14px] text-foreground/40 mt-2 cursor-pointer hover:text-foreground/70 transition-colors pointer-events-auto"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          onClick={onAddAnswer}
+        >
+          Add your answer. Vote on others.{" "}
+          <span className="text-foreground/60 font-medium">$1,000 for the top submission.</span>
+        </motion.p>
       </div>
 
       {/* Bottom stats */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-auto">
-        <div
-          className="pt-16 pb-6 px-6 flex items-center justify-center gap-8"
-          style={{
-            background: "linear-gradient(to top, rgba(250,250,250,1) 50%, rgba(250,250,250,0))",
-          }}
-        >
-          <Stat value={stats.answers} label="answers" />
-          <div className="w-px h-5 bg-foreground/10" />
-          <Stat value={stats.votes} label="votes" />
-          <div className="w-px h-5 bg-foreground/10" />
-          <Stat value="$1K" label="prize" />
-        </div>
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-auto pb-6 flex items-center justify-center gap-8">
+        <Stat value={stats.answers} label="answers" />
+        <div className="w-px h-4 bg-foreground/15" />
+        <Stat value={stats.votes} label="votes" />
+        <div className="w-px h-4 bg-foreground/15" />
+        <Stat value="$1K" label="prize" />
       </div>
     </div>
   );
