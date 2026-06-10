@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, ArrowDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import Canvas from "@/components/wall/Canvas";
 import SubmitModal from "@/components/wall/SubmitModal";
@@ -43,10 +43,10 @@ function generatePosition(index, total) {
 
 export default function TrustWall() {
   const [introComplete, setIntroComplete] = useState(() => !!sessionStorage.getItem("tw_intro_seen"));
+  const [showCanvas, setShowCanvas] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
   const [shareSubmission, setShareSubmission] = useState(null);
   const [userVotes, setUserVotes] = useState(getUserVotes);
-  const containerRef = useRef(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -55,21 +55,30 @@ export default function TrustWall() {
     setIntroComplete(true);
   };
 
-  const { scrollY } = useScroll({ container: containerRef });
-  // Canvas rises from below as user scrolls
-  const canvasY = useTransform(scrollY, [0, window.innerHeight * 0.8], ["100vh", "0vh"]);
-  const canvasOpacity = useTransform(scrollY, [0, window.innerHeight * 0.4], [0, 1]);
-  const heroOpacity = useTransform(scrollY, [0, window.innerHeight * 0.5], [1, 0]);
+  // Trigger canvas reveal on scroll
+  useEffect(() => {
+    if (showCanvas) return;
+    const onScroll = () => {
+      if (window.scrollY > 80) setShowCanvas(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [showCanvas]);
+
+  // Lock body scroll once canvas is shown
+  useEffect(() => {
+    if (showCanvas) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showCanvas]);
 
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ["submissions"],
     queryFn: () => base44.entities.Submission.filter({ status: "approved" }, "-total_score", 200),
     refetchInterval: 15000,
-  });
-
-  const { data: allVotes = [] } = useQuery({
-    queryKey: ["allVotes"],
-    queryFn: () => base44.entities.Vote.list("-created_date", 100),
   });
 
   const positionedSubmissions = useMemo(() => {
@@ -144,135 +153,201 @@ export default function TrustWall() {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="h-screen overflow-y-scroll"
-      style={{ backgroundColor: "#fafafa" }}
-    >
-      {/* Dot grid — always behind */}
+    <div className="relative" style={{ backgroundColor: "#fafafa" }}>
+      {/* Dot grid */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px)",
           backgroundSize: "32px 32px",
+          zIndex: 0,
         }}
       />
 
-      {/* ── SECTION 1: Hero — full viewport height ── */}
-      <div className="relative h-screen flex flex-col" style={{ zIndex: 10 }}>
-        {/* Nav */}
-        <div className="flex items-center justify-between px-6 md:px-12 pt-8">
-          <span
-            className="text-[13px] tracking-[0.15em] uppercase text-foreground/40"
-            style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
-          >
-            Niural AI Labs
-          </span>
-          <Link
-            to="/admin"
-            className="text-[12px] text-foreground/30 hover:text-foreground/60 transition-colors"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Admin
-          </Link>
-        </div>
-
-        {/* Hero text — centred, scales down & fades as you scroll */}
-        <motion.div
-          style={{ opacity: heroOpacity }}
-          className="flex-1 flex flex-col items-center justify-center text-center px-6"
-        >
-          <motion.h1
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="text-5xl md:text-7xl lg:text-[96px] text-foreground leading-[1.04] tracking-tight mb-6 max-w-4xl"
-            style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
-          >
-            What's the wildest thing
-            <br />
-            <em>you'd trust AI with?</em>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[15px] text-foreground/50 mb-10 max-w-sm"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Add your answer. Vote on others.{" "}
-            <span className="text-foreground/70">$1,000 for the top submission.</span>
-          </motion.p>
-
-          <motion.button
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-            onClick={() => setShowSubmit(true)}
-            className="inline-flex items-center gap-2 bg-foreground text-background px-7 py-3.5 rounded-full text-[14px] hover:opacity-80 transition-opacity"
-            style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
-          >
-            <Plus size={15} strokeWidth={2.5} />
-            Add your answer
-          </motion.button>
-
-          {/* Scroll hint */}
+      {/* ── HERO ── */}
+      <AnimatePresence>
+        {!showCanvas && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.6 }}
-            className="absolute bottom-10 flex flex-col items-center gap-2 text-foreground/30"
+            key="hero"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 flex flex-col z-10"
           >
-            <span className="text-[12px] tracking-wider uppercase" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-              Scroll to explore
-            </span>
+            {/* Nav */}
+            <div className="flex items-center justify-between px-6 md:px-12 pt-8 flex-shrink-0">
+              <span
+                className="text-[13px] tracking-[0.15em] uppercase text-foreground/40"
+                style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
+              >
+                Niural AI Labs
+              </span>
+              <Link
+                to="/admin"
+                className="text-[12px] text-foreground/30 hover:text-foreground/60 transition-colors"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Admin
+              </Link>
+            </div>
+
+            {/* Hero text */}
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+              <motion.h1
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="text-5xl md:text-7xl lg:text-[88px] text-foreground leading-[1.04] tracking-tight mb-6 max-w-4xl"
+                style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}
+              >
+                What's the wildest thing
+                <br />
+                <em>you'd trust AI with?</em>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="text-[15px] text-foreground/50 mb-10 max-w-sm"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Add your answer. Vote on others.{" "}
+                <span className="text-foreground/70">$1,000 for the top submission.</span>
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.35 }}
+                className="flex flex-col sm:flex-row items-center gap-3"
+              >
+                <button
+                  onClick={() => setShowSubmit(true)}
+                  className="inline-flex items-center gap-2 bg-foreground text-background px-7 py-3.5 rounded-full text-[14px] hover:opacity-80 transition-opacity"
+                  style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  Add your answer
+                </button>
+                <button
+                  onClick={() => setShowCanvas(true)}
+                  className="inline-flex items-center gap-2 text-foreground/50 hover:text-foreground/80 px-4 py-3.5 rounded-full text-[14px] transition-colors"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  See the wall
+                  <ArrowDown size={14} />
+                </button>
+              </motion.div>
+            </div>
+
+            {/* Scroll hint */}
             <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
-              className="w-5 h-5 border border-foreground/20 rounded-full flex items-center justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.4, duration: 0.6 }}
+              className="pb-10 flex flex-col items-center gap-2 text-foreground/25"
             >
-              <div className="w-1 h-1 rounded-full bg-foreground/30" />
+              <motion.div
+                animate={{ y: [0, 5, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+              >
+                <ArrowDown size={16} />
+              </motion.div>
+              <span className="text-[11px] tracking-widest uppercase" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+                scroll to explore
+              </span>
             </motion.div>
           </motion.div>
-        </motion.div>
-      </div>
-
-      {/* ── SECTION 2: Spacer that drives the scroll-triggered reveal ── */}
-      <div className="h-[60vh]" />
-
-      {/* ── SECTION 3: Canvas — sticky, rises up as user scrolls ── */}
-      <motion.div
-        style={{ y: canvasY, opacity: canvasOpacity }}
-        className="fixed inset-0 z-20"
-      >
-        {/* Bottom stats bar */}
-        <div
-          className="absolute bottom-0 left-0 right-0 z-30 pt-12 pb-6 px-6 flex items-center justify-center gap-8 pointer-events-auto"
-          style={{
-            background: "linear-gradient(to top, rgba(250,250,250,1) 50%, rgba(250,250,250,0))",
-          }}
-        >
-          <Stat value={stats.answers} label="answers" />
-          <div className="w-px h-5 bg-foreground/10" />
-          <Stat value={stats.votes} label="votes" />
-          <div className="w-px h-5 bg-foreground/10" />
-          <Stat value="$1K" label="prize" />
-        </div>
-
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="w-6 h-6 border-2 border-black/10 border-t-black/40 rounded-full animate-spin" />
-          </div>
         )}
+      </AnimatePresence>
 
-        <Canvas
-          submissions={positionedSubmissions}
-          onVote={handleVote}
-          onShare={(s) => setShareSubmission(s)}
-          userVotes={userVotes}
-        />
-      </motion.div>
+      {/* Scroll driver — only shown when hero is visible */}
+      {!showCanvas && <div style={{ height: "200vh" }} />}
+
+      {/* ── CANVAS ── */}
+      <AnimatePresence>
+        {showCanvas && (
+          <motion.div
+            key="canvas"
+            initial={{ y: "100vh" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100vh" }}
+            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-0 z-20"
+            style={{ backgroundColor: "#fafafa" }}
+          >
+            {/* Top bar */}
+            <div
+              className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 md:px-10 pt-5 pb-10 pointer-events-auto"
+              style={{
+                background: "linear-gradient(to bottom, rgba(250,250,250,1) 55%, rgba(250,250,250,0))",
+              }}
+            >
+              <button
+                onClick={() => setShowCanvas(false)}
+                className="text-[12px] text-foreground/40 hover:text-foreground/70 transition-colors flex items-center gap-1.5"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                ← Back
+              </button>
+              <span
+                className="text-[13px] tracking-[0.15em] uppercase text-foreground/30"
+                style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
+              >
+                Niural AI Labs
+              </span>
+              <Link
+                to="/admin"
+                className="text-[12px] text-foreground/30 hover:text-foreground/60 transition-colors"
+                style={{ fontFamily: "'DM Sans', sans-serif" }}
+              >
+                Admin
+              </Link>
+            </div>
+
+            {/* Canvas */}
+            {isLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 border-2 border-black/10 border-t-black/40 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <Canvas
+                submissions={positionedSubmissions}
+                onVote={handleVote}
+                onShare={(s) => setShareSubmission(s)}
+                userVotes={userVotes}
+              />
+            )}
+
+            {/* Bottom bar */}
+            <div
+              className="absolute bottom-0 left-0 right-0 z-30 pointer-events-auto"
+              style={{
+                background: "linear-gradient(to top, rgba(250,250,250,1) 55%, rgba(250,250,250,0))",
+              }}
+            >
+              <div className="flex items-center justify-between px-6 md:px-10 pb-7 pt-12">
+                <div className="flex items-center gap-6">
+                  <Stat value={stats.answers} label="answers" />
+                  <div className="w-px h-4 bg-foreground/10" />
+                  <Stat value={stats.votes} label="votes" />
+                  <div className="w-px h-4 bg-foreground/10" />
+                  <Stat value="$1K" label="prize" />
+                </div>
+                <button
+                  onClick={() => setShowSubmit(true)}
+                  className="inline-flex items-center gap-2 bg-foreground text-background px-5 py-2.5 rounded-full text-[13px] hover:opacity-80 transition-opacity"
+                  style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
+                >
+                  <Plus size={13} strokeWidth={2.5} />
+                  Add your answer
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
       <SubmitModal
