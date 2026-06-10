@@ -42,12 +42,19 @@ function generateNotes() {
   return notes;
 }
 
-// Phases: "filling" → "full" → "fall" → "done"
+// Phases: "fresco" → "filling" → "full" → "fall" → "done"
 export default function IntroAnimation({ onComplete }) {
-  const [phase, setPhase] = useState("filling");
+  const [phase, setPhase] = useState("fresco");
   const [visibleCount, setVisibleCount] = useState(0);
 
   const notes = useMemo(() => generateNotes(), []);
+
+  // Show fresco for 2.8s then start filling
+  useEffect(() => {
+    if (phase !== "fresco") return;
+    const t = setTimeout(() => setPhase("filling"), 2800);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   // Fill all notes quickly
   useEffect(() => {
@@ -79,20 +86,91 @@ export default function IntroAnimation({ onComplete }) {
   }, [phase]);
 
   const visibleNotes = notes.slice(0, visibleCount);
+  const isFresco = phase === "fresco";
+  const isFilling = phase === "filling" || phase === "full" || phase === "fall";
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: "#fafafa" }}>
-      {/* Dot grid */}
-      <div
+    <div className="fixed inset-0 z-50 overflow-hidden" style={{ backgroundColor: "#1a1208" }}>
+
+      {/* Renaissance fresco background */}
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(https://media.base44.com/images/public/6a28709fc5f970eb1e30e66a/1005d6481_generated_image.png)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center top",
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isFresco ? 1 : 0 }}
+        transition={{ duration: isFresco ? 1.2 : 0.8 }}
+      />
+
+      {/* Vignette overlay on fresco */}
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          background: "radial-gradient(ellipse at center, transparent 30%, rgba(15,10,3,0.55) 100%)",
+        }}
+        animate={{ opacity: isFresco ? 1 : 0 }}
+        transition={{ duration: 0.8 }}
+      />
+
+      {/* "In AI We Trust" text on fresco */}
+      <AnimatePresence>
+        {isFresco && (
+          <motion.div
+            className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.5 } }}
+            transition={{ delay: 0.8, duration: 1.0 }}
+          >
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.0, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="text-[11px] tracking-[0.35em] uppercase mb-4"
+              style={{
+                fontFamily: "'DM Sans', sans-serif",
+                color: "rgba(255,240,200,0.55)",
+                letterSpacing: "0.35em",
+              }}
+            >
+              Niural AI Labs presents
+            </motion.p>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.2, duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
+              className="text-6xl md:text-8xl text-center leading-none tracking-tight"
+              style={{
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                color: "rgba(255,240,200,0.92)",
+                textShadow: "0 4px 40px rgba(0,0,0,0.6), 0 1px 0 rgba(255,220,100,0.2)",
+              }}
+            >
+              In AI<br /><em>We Trust</em>
+            </motion.h1>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dot grid (appears as fresco fades) */}
+      <motion.div
         className="absolute inset-0"
         style={{
           backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px)",
           backgroundSize: "32px 32px",
+          backgroundColor: "#fafafa",
         }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isFilling ? 1 : 0 }}
+        transition={{ duration: 0.6 }}
       />
 
       {/* Notes */}
-      {visibleNotes.map((note, idx) => {
+      {visibleNotes.map((note) => {
         const isFalling = phase === "fall";
         const fallDelay = (note.x / window.innerWidth) * 0.15 + Math.random() * 0.1;
         return (
@@ -121,6 +199,7 @@ export default function IntroAnimation({ onComplete }) {
               backgroundColor: note.color,
               border: "1.5px solid rgba(0,0,0,0.06)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              zIndex: 20,
             }}
           >
             <p
