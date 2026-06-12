@@ -59,8 +59,37 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
 
   const handlePointerUp = useCallback(() => setIsDragging(false), []);
 
+  const lastPinchDist = useRef(null);
+
   const handleWheel = useCallback((e) => {
+    // Pan only, no zoom on scroll
     setOffset(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
+  }, []);
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchDist.current = Math.hypot(dx, dy);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      if (lastPinchDist.current) {
+        const ratio = dist / lastPinchDist.current;
+        setScale(prev => Math.min(Math.max(prev * ratio, 0.3), 3));
+      }
+      lastPinchDist.current = dist;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    lastPinchDist.current = null;
   }, []);
 
   const handleSurprise = useCallback(() => {
@@ -105,6 +134,9 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Dot grid background */}
       <div
