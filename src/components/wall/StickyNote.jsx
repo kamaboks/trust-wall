@@ -16,9 +16,9 @@ const NOTE_STYLES = {
 };
 
 const VOTE_EMOJIS = {
-  unhinged: "🔥",
-  think:    "💭",
-  trust:    "✨",
+  unhinged: "🎰",
+  think:    "🧠",
+  trust:    "🤝",
 };
 
 export default function StickyNote({ submission, onVote, onShare, userVotes, highlighted }) {

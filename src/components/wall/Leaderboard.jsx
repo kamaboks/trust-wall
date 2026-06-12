@@ -79,7 +79,7 @@ export default function Leaderboard({ submissions, onFocusNote }) {
                   — {s.alias || "anonymous"}
                 </p>
                 <div className="flex items-center gap-3 text-[12px] text-foreground/60 mb-2" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  <span>🚨 {s.votes_unhinged || 0}</span>
+                  <span>🎰 {s.votes_unhinged || 0}</span>
                   <span>🧠 {s.votes_think || 0}</span>
                   <span>🤝 {s.votes_trust || 0}</span>
                 </div>
@@ -122,7 +122,7 @@ export default function Leaderboard({ submissions, onFocusNote }) {
                   )}
                 </div>
                 <div className="hidden md:flex items-center gap-3 text-[12px] text-foreground/50 shrink-0" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  <span>🚨 {s.votes_unhinged || 0}</span>
+                  <span>🎰 {s.votes_unhinged || 0}</span>
                   <span>🧠 {s.votes_think || 0}</span>
                   <span>🤝 {s.votes_trust || 0}</span>
                 </div>
