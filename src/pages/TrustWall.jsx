@@ -6,6 +6,8 @@ import HeroOverlay from "@/components/wall/HeroOverlay";
 import Canvas from "@/components/wall/Canvas";
 import SubmitModal from "@/components/wall/SubmitModal";
 import ShareModal from "@/components/wall/ShareModal";
+import Leaderboard from "@/components/wall/Leaderboard";
+import FAQ from "@/components/wall/FAQ";
 
 const NOTE_COLORS = [
   "#FEF3C7", "#FCE7F3", "#DBEAFE", "#D1FAE5", "#FFEDD5",
@@ -114,7 +116,7 @@ export default function TrustWall() {
   }
 
   return (
-    <div className="w-screen" style={{ height: "200vh" }}>
+    <div className="w-screen">
       {/* Section 1 — Hero */}
       <div className="relative w-full h-screen overflow-hidden bg-background">
         <HeroOverlay
@@ -140,6 +142,12 @@ export default function TrustWall() {
           + Add your answer
         </button>
       </div>
+
+      {/* Section 3 — Leaderboard */}
+      <Leaderboard submissions={submissions} />
+
+      {/* Section 4 — FAQ */}
+      <FAQ />
 
       <SubmitModal
         isOpen={showSubmitModal}
