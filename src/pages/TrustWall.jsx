@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import IntroAnimation from "@/components/wall/IntroAnimation";
 import HeroOverlay from "@/components/wall/HeroOverlay";
 import Canvas from "@/components/wall/Canvas";
+import { useRef } from "react";
 import SubmitModal from "@/components/wall/SubmitModal";
 import ShareModal from "@/components/wall/ShareModal";
 import Leaderboard from "@/components/wall/Leaderboard";
@@ -27,6 +28,7 @@ function getBrowserFingerprint() {
 }
 
 export default function TrustWall() {
+  const canvasRef = useRef(null);
   const [showIntro, setShowIntro] = useState(true);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [shareSubmission, setShareSubmission] = useState(null);
@@ -129,23 +131,25 @@ export default function TrustWall() {
       {/* Section 2 — Canvas */}
       <div className="relative w-full h-screen overflow-hidden bg-background">
         <Canvas
+          ref={canvasRef}
           submissions={submissions}
           onVote={(submissionId, category) => voteMutation.mutate({ submissionId, category })}
           onShare={(submission) => setShareSubmission(submission)}
           userVotes={userVotes}
+          onAddAnswer={() => setShowSubmitModal(true)}
         />
-        {/* Add answer button on canvas section */}
-        <button
-          onClick={() => setShowSubmitModal(true)}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity z-10"
-          style={{ fontFamily: "'DM Sans', sans-serif" }}
-        >
-          + Add your answer
-        </button>
+
       </div>
 
       {/* Section 3 — Leaderboard */}
-      <Leaderboard submissions={submissions} />
+      <Leaderboard
+        submissions={submissions}
+        onFocusNote={(id) => {
+          const canvasEl = document.querySelector(".relative.w-full.h-screen:nth-child(2)");
+          window.scrollTo({ top: window.innerHeight, behavior: "smooth" });
+          setTimeout(() => canvasRef.current?.focusNote(id), 600);
+        }}
+      />
 
       {/* Section 4 — FAQ */}
       <FAQ />

@@ -8,7 +8,7 @@ const TOP3_LABELS = [
   { badge: "#3", badgeBg: "#F97316", rank: "#3" },
 ];
 
-export default function Leaderboard({ submissions }) {
+export default function Leaderboard({ submissions, onFocusNote }) {
   const sorted = [...submissions]
     .sort((a, b) => (b.total_score || 0) - (a.total_score || 0))
     .slice(0, 10);
@@ -25,7 +25,7 @@ export default function Leaderboard({ submissions }) {
   }
 
   return (
-    <section className="w-full bg-[#f7f6f3] py-20 px-4">
+    <section id="leaderboard" className="w-full bg-[#f7f6f3] py-20 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Heading */}
         <motion.h2
@@ -57,7 +57,8 @@ export default function Leaderboard({ submissions }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className={`relative rounded-2xl p-6 ${isFirst ? "shadow-lg scale-105 origin-bottom" : "shadow-sm"}`}
+                onClick={() => onFocusNote && onFocusNote(s.id)}
+                className={`relative rounded-2xl p-6 cursor-pointer hover:brightness-95 transition-all ${isFirst ? "shadow-lg scale-105 origin-bottom" : "shadow-sm"}`}
                 style={{ backgroundColor: TOP3_COLORS[idx] }}
               >
                 {/* Badge */}
@@ -101,7 +102,8 @@ export default function Leaderboard({ submissions }) {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="flex items-center gap-4 px-6 py-4 border-b border-black/5 last:border-0 hover:bg-black/[0.015] transition-colors"
+                onClick={() => onFocusNote && onFocusNote(s.id)}
+                className="flex items-center gap-4 px-6 py-4 border-b border-black/5 last:border-0 hover:bg-black/[0.02] transition-colors cursor-pointer"
               >
                 <span
                   className="text-lg text-foreground/25 w-8 shrink-0 italic"

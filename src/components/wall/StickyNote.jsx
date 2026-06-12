@@ -21,7 +21,7 @@ const VOTE_EMOJIS = {
   trust:    "✨",
 };
 
-export default function StickyNote({ submission, onVote, onShare, userVotes }) {
+export default function StickyNote({ submission, onVote, onShare, userVotes, highlighted }) {
   const [isHovered, setIsHovered] = useState(false);
   const color = NOTE_STYLES[submission.note_color] || NOTE_STYLES.yellow;
   const rotation = submission.note_rotation || 0;
@@ -56,7 +56,9 @@ export default function StickyNote({ submission, onVote, onShare, userVotes }) {
         style={{
           backgroundColor: color.bg,
           border: `1.5px solid ${color.border}`,
-          boxShadow: isHovered
+          boxShadow: highlighted
+            ? "0 0 0 3px #1a1a1a, 0 12px 32px rgba(0,0,0,0.18)"
+            : isHovered
             ? "0 12px 32px rgba(0,0,0,0.10)"
             : "0 2px 8px rgba(0,0,0,0.06)",
           transition: "box-shadow 0.2s ease",

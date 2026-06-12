@@ -1,19 +1,22 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import StickyNote from "./StickyNote";
+import { Search, Shuffle } from "lucide-react";
 
-export default function Canvas({ submissions, onVote, onShare, userVotes }) {
+const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVotes, onAddAnswer }, ref) {
   const containerRef = useRef(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const offsetStart = useRef({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("recent"); // "recent" | "votes"
+  const [highlighted, setHighlighted] = useState(null);
 
   // Center canvas initially
   useEffect(() => {
     if (containerRef.current && submissions.length > 0) {
       const rect = containerRef.current.getBoundingClientRect();
-      // Find center of all notes
       let sumX = 0, sumY = 0;
       submissions.forEach(s => {
         sumX += (s.note_x || 0) + 110;
@@ -21,15 +24,26 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
       });
       const cx = sumX / submissions.length;
       const cy = sumY / submissions.length;
-      setOffset({
-        x: rect.width / 2 - cx,
-        y: rect.height / 2 - cy,
-      });
+      setOffset({ x: rect.width / 2 - cx, y: rect.height / 2 - cy });
     }
   }, [submissions.length > 0]);
 
+  // Expose focusNote to parent
+  useImperativeHandle(ref, () => ({
+    focusNote(submissionId) {
+      const s = submissions.find(sub => sub.id === submissionId);
+      if (!s || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const cx = (s.note_x || 0) + 110;
+      const cy = (s.note_y || 0) + 80;
+      setOffset({ x: rect.width / 2 - cx, y: rect.height / 2 - cy });
+      setHighlighted(submissionId);
+      setTimeout(() => setHighlighted(null), 2000);
+    }
+  }), [submissions]);
+
   const handlePointerDown = useCallback((e) => {
-    if (e.target.closest("button")) return;
+    if (e.target.closest("button") || e.target.closest("input")) return;
     setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY };
     offsetStart.current = { ...offset };
@@ -40,23 +54,47 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
     if (!isDragging) return;
     const dx = e.clientX - dragStart.current.x;
     const dy = e.clientY - dragStart.current.y;
-    setOffset({
-      x: offsetStart.current.x + dx,
-      y: offsetStart.current.y + dy,
-    });
+    setOffset({ x: offsetStart.current.x + dx, y: offsetStart.current.y + dy });
   }, [isDragging]);
 
-  const handlePointerUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
+  const handlePointerUp = useCallback(() => setIsDragging(false), []);
 
   const handleWheel = useCallback((e) => {
-    // Pan vertically/horizontally on scroll, no zoom
-    setOffset(prev => ({
-      x: prev.x - e.deltaX,
-      y: prev.y - e.deltaY,
-    }));
+    setOffset(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
   }, []);
+
+  const handleSurprise = useCallback(() => {
+    if (!submissions.length || !containerRef.current) return;
+    const random = submissions[Math.floor(Math.random() * submissions.length)];
+    const rect = containerRef.current.getBoundingClientRect();
+    setOffset({
+      x: rect.width / 2 - ((random.note_x || 0) + 110),
+      y: rect.height / 2 - ((random.note_y || 0) + 80),
+    });
+    setHighlighted(random.id);
+    setTimeout(() => setHighlighted(null), 2000);
+  }, [submissions]);
+
+  // Filter & sort
+  const visibleSubmissions = submissions
+    .filter(s => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        s.answer?.toLowerCase().includes(q) ||
+        s.alias?.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (sort === "votes") return (b.total_score || 0) - (a.total_score || 0);
+      return new Date(b.created_date) - new Date(a.created_date);
+    });
+
+  // Ticker: latest submission
+  const latest = submissions.length > 0
+    ? [...submissions].sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0]
+    : null;
 
   return (
     <div
@@ -66,6 +104,7 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onWheel={handleWheel}
     >
       {/* Dot grid background */}
       <div
@@ -85,7 +124,7 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
           transformOrigin: "0 0",
         }}
       >
-        {submissions.map((submission) => (
+        {visibleSubmissions.map((submission) => (
           <StickyNote
             key={submission.id}
             submission={submission}
@@ -93,9 +132,102 @@ export default function Canvas({ submissions, onVote, onShare, userVotes }) {
             onShare={onShare}
             userVotes={userVotes}
             scale={scale}
+            highlighted={highlighted === submission.id}
           />
         ))}
       </div>
+
+      {/* Top-left: search + sort */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 pointer-events-auto">
+        {/* Search */}
+        <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm border border-black/10 rounded-full px-3 py-2 shadow-sm w-56">
+          <Search size={13} className="text-foreground/40 shrink-0" />
+          <input
+            type="text"
+            placeholder="Search by name, email or answer..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="bg-transparent outline-none text-[12px] text-foreground placeholder:text-foreground/35 w-full"
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          />
+        </div>
+        {/* Sort pills */}
+        <div className="flex items-center gap-1">
+          {["recent", "votes"].map(opt => (
+            <button
+              key={opt}
+              onClick={() => setSort(opt)}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                sort === opt
+                  ? "bg-foreground text-background"
+                  : "bg-white/80 text-foreground/50 border border-black/10 hover:bg-white"
+              }`}
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              {opt === "recent" ? "Recent" : "Most votes"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Top-right: live stats */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-3 pointer-events-none">
+        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-black/10 rounded-full px-3 py-1.5 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+          <span className="text-[12px] text-foreground/70" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <span className="font-semibold text-foreground">{submissions.length}</span> answers
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-black/10 rounded-full px-3 py-1.5 shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+          <span className="text-[12px] text-foreground/70" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <span className="font-semibold text-foreground">{submissions.reduce((s, sub) => s + (sub.total_score || 0), 0).toLocaleString()}</span> votes
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom: add button + surprise + leaderboard */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
+        <button
+          onClick={onAddAnswer}
+          className="bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg"
+          style={{ fontFamily: "'DM Sans', sans-serif" }}
+        >
+          ✏️ Add your answer
+        </button>
+        <button
+          onClick={handleSurprise}
+          title="Surprise me"
+          className="w-11 h-11 rounded-full bg-white border border-black/10 shadow-md flex items-center justify-center hover:bg-black/5 transition-colors text-lg"
+        >
+          ✨
+        </button>
+        <a
+          href="#leaderboard"
+          title="Leaderboard"
+          className="w-11 h-11 rounded-full bg-white border border-black/10 shadow-md flex items-center justify-center hover:bg-black/5 transition-colors text-lg"
+        >
+          🏆
+        </a>
+      </div>
+
+      {/* Bottom ticker */}
+      {latest && (
+        <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
+          <span className="text-[11px] text-foreground/35 italic" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            votes rolling in for '{latest.answer?.slice(0, 40)}{latest.answer?.length > 40 ? "…" : ""}'
+          </span>
+        </div>
+      )}
+
+      {/* Hint */}
+      <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
+        <span className="text-[11px] text-foreground/30 italic" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          drag to explore · pinch to zoom
+        </span>
+      </div>
     </div>
   );
-}
+});
+
+export default Canvas;
