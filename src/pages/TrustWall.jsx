@@ -8,6 +8,7 @@ import SubmitModal from "@/components/wall/SubmitModal";
 import ShareModal from "@/components/wall/ShareModal";
 import Leaderboard from "@/components/wall/Leaderboard";
 import FAQ from "@/components/wall/FAQ";
+import Countdown from "@/components/wall/Countdown";
 
 const NOTE_COLORS = [
   "#FEF3C7", "#FCE7F3", "#DBEAFE", "#D1FAE5", "#FFEDD5",
@@ -148,6 +149,9 @@ export default function TrustWall() {
 
       {/* Section 4 — FAQ */}
       <FAQ />
+
+      {/* Section 5 — Countdown */}
+      <Countdown />
 
       <SubmitModal
         isOpen={showSubmitModal}
