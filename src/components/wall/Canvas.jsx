@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import StickyNote from "./StickyNote";
-import { Search, Shuffle } from "lucide-react";
+import { Search } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVotes, usedCategories, onAddAnswer, isAuthenticated, onSignIn }, ref) {
   const containerRef = useRef(null);
@@ -223,13 +224,22 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
       {/* Bottom: add button + surprise + leaderboard + sign-in */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
         {!isAuthenticated && (
-          <button
-            onClick={onSignIn}
-            className="bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
-          >
-            Sign in with Google to vote
-          </button>
+          <>
+            <button
+              onClick={onSignIn}
+              className="bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              Sign in with Google
+            </button>
+            <Link
+              to="/login"
+              className="bg-white border border-black/10 text-foreground px-5 py-3 rounded-full text-[13px] font-medium hover:bg-black/5 transition-colors shadow-sm"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              Sign in with Email
+            </Link>
+          </>
         )}
         {isAuthenticated && (
           <>
