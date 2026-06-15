@@ -14,6 +14,43 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("recent"); // "recent" | "votes"
   const [highlighted, setHighlighted] = useState(null);
+  const lastPinchDist = useRef(null);
+
+  // Grid layout constants
+  const NOTE_W = 212;
+  const NOTE_H = 150;
+  const GRID_COLS = 5;
+
+  // Filter & sort
+  const visibleSubmissions = submissions
+    .filter(s => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        s.answer?.toLowerCase().includes(q) ||
+        s.alias?.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (sort === "votes") return (b.total_score || 0) - (a.total_score || 0);
+      return new Date(b.created_date) - new Date(a.created_date);
+    });
+
+  // Compute grid positions for sorted notes
+  const gridMap = useMemo(() => {
+    const map = {};
+    visibleSubmissions.forEach((s, i) => {
+      const col = i % GRID_COLS;
+      const row = Math.floor(i / GRID_COLS);
+      map[s.id] = { x: col * NOTE_W + 40, y: row * NOTE_H + 40 };
+    });
+    return map;
+  }, [visibleSubmissions]);
+
+  const getPos = (s) => gridMap[s.id] || { x: s.note_x || 0, y: s.note_y || 0 };
+  const getCx = (s) => (getPos(s).x || 0) + 100;
+  const getCy = (s) => (getPos(s).y || 0) + 55;
 
   // Center canvas initially
   useEffect(() => {
@@ -59,10 +96,7 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
 
   const handlePointerUp = useCallback(() => setIsDragging(false), []);
 
-  const lastPinchDist = useRef(null);
-
   const handleWheel = useCallback((e) => {
-    // Pan only, no zoom on scroll
     setOffset(prev => ({ x: prev.x - e.deltaX, y: prev.y - e.deltaY }));
   }, []);
 
@@ -114,41 +148,6 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
     setHighlighted(random.id);
     setTimeout(() => setHighlighted(null), 2000);
   }, [visibleSubmissions, gridMap]);
-
-  const NOTE_W = 212;
-  const NOTE_H = 150;
-  const GRID_COLS = 5;
-
-  // Filter & sort
-  const visibleSubmissions = submissions
-    .filter(s => {
-      if (!search) return true;
-      const q = search.toLowerCase();
-      return (
-        s.answer?.toLowerCase().includes(q) ||
-        s.alias?.toLowerCase().includes(q) ||
-        s.email?.toLowerCase().includes(q)
-      );
-    })
-    .sort((a, b) => {
-      if (sort === "votes") return (b.total_score || 0) - (a.total_score || 0);
-      return new Date(b.created_date) - new Date(a.created_date);
-    });
-
-  // Compute grid positions for sorted notes
-  const gridMap = useMemo(() => {
-    const map = {};
-    visibleSubmissions.forEach((s, i) => {
-      const col = i % GRID_COLS;
-      const row = Math.floor(i / GRID_COLS);
-      map[s.id] = { x: col * NOTE_W + 40, y: row * NOTE_H + 40 };
-    });
-    return map;
-  }, [visibleSubmissions]);
-
-  const getPos = (s) => gridMap[s.id] || { x: s.note_x || 0, y: s.note_y || 0 };
-  const getCx = (s) => (getPos(s).x || 0) + 100;
-  const getCy = (s) => (getPos(s).y || 0) + 55;
 
   // Ticker: latest submission
   const latest = submissions.length > 0
