@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperat
 import StickyNote from "./StickyNote";
 import { Search } from "lucide-react";
 import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 
 const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVotes, usedCategories, onAddAnswer, isAuthenticated, onSignIn }, ref) {
   const containerRef = useRef(null);
@@ -256,6 +257,13 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
             >
               {3 - (usedCategories?.size || 0)} votes left
             </div>
+            <button
+              onClick={() => base44.auth.logout(window.location.href)}
+              className="px-3 py-1.5 rounded-full text-[11px] bg-white/90 border border-black/10 shadow-sm text-foreground/50 hover:text-foreground hover:bg-black/5 transition-colors"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              Log out
+            </button>
           </>
         )}
         <button
