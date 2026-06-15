@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
 import StickyNote from "./StickyNote";
-import { Search } from "lucide-react";
+import { Search, Crosshair, ArrowDownWideNarrow } from "lucide-react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
@@ -93,6 +93,20 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
   const handleTouchEnd = useCallback(() => {
     lastPinchDist.current = null;
   }, []);
+
+  const handleRecenter = useCallback(() => {
+    if (!submissions.length || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    let sumX = 0, sumY = 0;
+    submissions.forEach(s => {
+      sumX += (s.note_x || 0) + 110;
+      sumY += (s.note_y || 0) + 80;
+    });
+    const cx = sumX / submissions.length;
+    const cy = sumY / submissions.length;
+    setOffset({ x: rect.width / 2 - cx, y: rect.height / 2 - cy });
+    setScale(1);
+  }, [submissions]);
 
   const handleSurprise = useCallback(() => {
     if (!submissions.length || !containerRef.current) return;
@@ -290,6 +304,26 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
           </span>
         </div>
       )}
+
+      {/* Floating nav — right side */}
+      <div className="absolute top-1/2 right-4 -translate-y-1/2 z-10 flex flex-col gap-1.5">
+        <button
+          onClick={handleRecenter}
+          title="Recenter"
+          className="w-9 h-9 rounded-full bg-white/90 border border-black/10 shadow-sm flex items-center justify-center hover:bg-black/5 transition-colors"
+        >
+          <Crosshair size={14} className="text-foreground/50" />
+        </button>
+        <button
+          onClick={() => setSort(s => s === "recent" ? "votes" : "recent")}
+          title={sort === "recent" ? "Switch to Most Votes" : "Switch to Recent"}
+          className={`w-9 h-9 rounded-full border shadow-sm flex items-center justify-center transition-colors ${
+            sort === "votes" ? "bg-foreground border-foreground text-background" : "bg-white/90 border-black/10 hover:bg-black/5"
+          }`}
+        >
+          <ArrowDownWideNarrow size={13} />
+        </button>
+      </div>
 
       {/* Hint */}
       <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
