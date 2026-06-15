@@ -12,7 +12,7 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
   const offsetStart = useRef({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("recent"); // "recent" | "votes"
+  const [sort, setSort] = useState("random"); // "random" | "recent" | "votes"
   const [highlighted, setHighlighted] = useState(null);
   const lastPinchDist = useRef(null);
 
@@ -37,16 +37,18 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
       return new Date(b.created_date) - new Date(a.created_date);
     });
 
-  // Compute grid positions for sorted notes
+  // Compute grid positions for sorted notes (only in grid modes)
   const gridMap = useMemo(() => {
     const map = {};
-    visibleSubmissions.forEach((s, i) => {
-      const col = i % GRID_COLS;
-      const row = Math.floor(i / GRID_COLS);
-      map[s.id] = { x: col * NOTE_W + 40, y: row * NOTE_H + 40 };
-    });
+    if (sort !== "random") {
+      visibleSubmissions.forEach((s, i) => {
+        const col = i % GRID_COLS;
+        const row = Math.floor(i / GRID_COLS);
+        map[s.id] = { x: col * NOTE_W + 40, y: row * NOTE_H + 40 };
+      });
+    }
     return map;
-  }, [visibleSubmissions]);
+  }, [visibleSubmissions, sort]);
 
   const getPos = (s) => gridMap[s.id] || { x: s.note_x || 0, y: s.note_y || 0 };
   const getCx = (s) => (getPos(s).x || 0) + 100;
@@ -220,7 +222,7 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
         </div>
         {/* Sort pills */}
         <div className="flex items-center gap-1">
-          {["recent", "votes"].map(opt => (
+          {["random", "recent", "votes"].map(opt => (
             <button
               key={opt}
               onClick={() => setSort(opt)}
@@ -231,7 +233,7 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
               }`}
               style={{ fontFamily: "'DM Sans', sans-serif" }}
             >
-              {opt === "recent" ? "Recent" : "Most votes"}
+              {opt === "random" ? "Random" : opt === "recent" ? "Recent" : "Most votes"}
             </button>
           ))}
         </div>
@@ -332,10 +334,10 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
           <Crosshair size={14} className="text-foreground/50" />
         </button>
         <button
-          onClick={() => setSort(s => s === "recent" ? "votes" : "recent")}
-          title={sort === "recent" ? "Switch to Most Votes" : "Switch to Recent"}
+          onClick={() => setSort(s => s === "random" ? "recent" : s === "recent" ? "votes" : "random")}
+          title={`Sort: ${sort === "random" ? "Random → Recent" : sort === "recent" ? "Recent → Most Votes" : "Most Votes → Random"}`}
           className={`w-9 h-9 rounded-full border shadow-sm flex items-center justify-center transition-colors ${
-            sort === "votes" ? "bg-foreground border-foreground text-background" : "bg-white/90 border-black/10 hover:bg-black/5"
+            sort !== "random" ? "bg-foreground border-foreground text-background" : "bg-white/90 border-black/10 hover:bg-black/5"
           }`}
         >
           <ArrowDownWideNarrow size={13} />
