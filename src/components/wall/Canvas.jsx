@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
 import StickyNote from "./StickyNote";
 import { Search, Crosshair, ArrowDownWideNarrow } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -17,18 +17,18 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
 
   // Center canvas initially
   useEffect(() => {
-    if (containerRef.current && submissions.length > 0) {
+    if (containerRef.current && visibleSubmissions.length > 0) {
       const rect = containerRef.current.getBoundingClientRect();
       let sumX = 0, sumY = 0;
-      submissions.forEach(s => {
-        sumX += (s.note_x || 0) + 110;
-        sumY += (s.note_y || 0) + 80;
+      visibleSubmissions.forEach(s => {
+        sumX += getCx(s);
+        sumY += getCy(s);
       });
-      const cx = sumX / submissions.length;
-      const cy = sumY / submissions.length;
+      const cx = sumX / visibleSubmissions.length;
+      const cy = sumY / visibleSubmissions.length;
       setOffset({ x: rect.width / 2 - cx, y: rect.height / 2 - cy });
     }
-  }, [submissions.length > 0]);
+  }, [visibleSubmissions.length > 0]);
 
   // Expose focusNote to parent
   useImperativeHandle(ref, () => ({
@@ -36,13 +36,11 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
       const s = submissions.find(sub => sub.id === submissionId);
       if (!s || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const cx = (s.note_x || 0) + 110;
-      const cy = (s.note_y || 0) + 80;
-      setOffset({ x: rect.width / 2 - cx, y: rect.height / 2 - cy });
+      setOffset({ x: rect.width / 2 - getCx(s), y: rect.height / 2 - getCy(s) });
       setHighlighted(submissionId);
       setTimeout(() => setHighlighted(null), 2000);
     }
-  }), [submissions]);
+  }), [submissions, gridMap]);
 
   const handlePointerDown = useCallback((e) => {
     if (e.target.closest("button") || e.target.closest("input")) return;
@@ -95,30 +93,31 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
   }, []);
 
   const handleRecenter = useCallback(() => {
-    if (!submissions.length || !containerRef.current) return;
+    if (!visibleSubmissions.length || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     let sumX = 0, sumY = 0;
-    submissions.forEach(s => {
-      sumX += (s.note_x || 0) + 110;
-      sumY += (s.note_y || 0) + 80;
-    });
-    const cx = sumX / submissions.length;
-    const cy = sumY / submissions.length;
+    visibleSubmissions.forEach(s => { sumX += getCx(s); sumY += getCy(s); });
+    const cx = sumX / visibleSubmissions.length;
+    const cy = sumY / visibleSubmissions.length;
     setOffset({ x: rect.width / 2 - cx, y: rect.height / 2 - cy });
     setScale(1);
-  }, [submissions]);
+  }, [visibleSubmissions, gridMap]);
 
   const handleSurprise = useCallback(() => {
-    if (!submissions.length || !containerRef.current) return;
-    const random = submissions[Math.floor(Math.random() * submissions.length)];
+    if (!visibleSubmissions.length || !containerRef.current) return;
+    const random = visibleSubmissions[Math.floor(Math.random() * visibleSubmissions.length)];
     const rect = containerRef.current.getBoundingClientRect();
     setOffset({
-      x: rect.width / 2 - ((random.note_x || 0) + 110),
-      y: rect.height / 2 - ((random.note_y || 0) + 80),
+      x: rect.width / 2 - getCx(random),
+      y: rect.height / 2 - getCy(random),
     });
     setHighlighted(random.id);
     setTimeout(() => setHighlighted(null), 2000);
-  }, [submissions]);
+  }, [visibleSubmissions, gridMap]);
+
+  const NOTE_W = 212;
+  const NOTE_H = 150;
+  const GRID_COLS = 5;
 
   // Filter & sort
   const visibleSubmissions = submissions
@@ -135,6 +134,21 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
       if (sort === "votes") return (b.total_score || 0) - (a.total_score || 0);
       return new Date(b.created_date) - new Date(a.created_date);
     });
+
+  // Compute grid positions for sorted notes
+  const gridMap = useMemo(() => {
+    const map = {};
+    visibleSubmissions.forEach((s, i) => {
+      const col = i % GRID_COLS;
+      const row = Math.floor(i / GRID_COLS);
+      map[s.id] = { x: col * NOTE_W + 40, y: row * NOTE_H + 40 };
+    });
+    return map;
+  }, [visibleSubmissions]);
+
+  const getPos = (s) => gridMap[s.id] || { x: s.note_x || 0, y: s.note_y || 0 };
+  const getCx = (s) => (getPos(s).x || 0) + 100;
+  const getCy = (s) => (getPos(s).y || 0) + 55;
 
   // Ticker: latest submission
   const latest = submissions.length > 0
@@ -172,19 +186,23 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
           transformOrigin: "0 0",
         }}
       >
-        {visibleSubmissions.map((submission) => (
-          <StickyNote
-            key={submission.id}
-            submission={submission}
-            onVote={onVote}
-            onShare={onShare}
-            userVotes={userVotes}
-            usedCategories={usedCategories}
-            isAuthenticated={isAuthenticated}
-            onSignIn={onSignIn}
-            highlighted={highlighted === submission.id}
-          />
-        ))}
+        {visibleSubmissions.map((submission) => {
+          const pos = gridMap[submission.id];
+          const positioned = pos ? { ...submission, note_x: pos.x, note_y: pos.y } : submission;
+          return (
+            <StickyNote
+              key={submission.id}
+              submission={positioned}
+              onVote={onVote}
+              onShare={onShare}
+              userVotes={userVotes}
+              usedCategories={usedCategories}
+              isAuthenticated={isAuthenticated}
+              onSignIn={onSignIn}
+              highlighted={highlighted === submission.id}
+            />
+          );
+        })}
       </div>
 
       {/* Top-left: search + sort */}
