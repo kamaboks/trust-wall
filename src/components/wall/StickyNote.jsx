@@ -21,7 +21,7 @@ const VOTE_EMOJIS = {
   trust:    "🤝",
 };
 
-export default function StickyNote({ submission, onVote, onShare, userVotes, highlighted }) {
+export default function StickyNote({ submission, onVote, onShare, userVotes, usedCategories, isAuthenticated, onSignIn, highlighted }) {
   const [isHovered, setIsHovered] = useState(false);
   const color = NOTE_STYLES[submission.note_color] || NOTE_STYLES.yellow;
   const rotation = submission.note_rotation || 0;
@@ -95,18 +95,27 @@ export default function StickyNote({ submission, onVote, onShare, userVotes, hig
         {/* Votes */}
         <div className="flex items-center gap-2">
           {voteButtons.map(({ key, count }) => {
-            const voted = userVotes?.[submission.id]?.includes(key);
+            const votedOnThis = userVotes?.[submission.id]?.includes(key);
+            const categoryUsed = usedCategories?.has(key);
+            const blocked = !isAuthenticated || (categoryUsed && !votedOnThis);
             return (
               <button
                 key={key}
-                onClick={(e) => { e.stopPropagation(); onVote(submission.id, key); }}
-                className="flex items-center gap-0.5 text-[11px] rounded-full px-1.5 py-0.5 transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isAuthenticated) { onSignIn?.(); return; }
+                  if (categoryUsed && !votedOnThis) return;
+                  onVote(submission.id, key);
+                }}
+                disabled={blocked}
+                className="flex items-center gap-0.5 text-[11px] rounded-full px-1.5 py-0.5 transition-all disabled:cursor-not-allowed"
                 style={{
-                  backgroundColor: voted ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.05)",
+                  backgroundColor: votedOnThis ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.05)",
                   color: color.text,
                   fontFamily: "'DM Sans', sans-serif",
-                  opacity: voted ? 1 : 0.7,
+                  opacity: votedOnThis ? 1 : blocked ? 0.35 : 0.7,
                 }}
+                title={!isAuthenticated ? "Sign in to vote" : categoryUsed && !votedOnThis ? "You already used this vote" : ""}
               >
                 <span>{VOTE_EMOJIS[key]}</span>
                 <span className="ml-0.5">{count}</span>

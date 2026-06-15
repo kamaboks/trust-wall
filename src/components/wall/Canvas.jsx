@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect, forwardRef, useImperat
 import StickyNote from "./StickyNote";
 import { Search, Shuffle } from "lucide-react";
 
-const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVotes, onAddAnswer }, ref) {
+const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVotes, usedCategories, onAddAnswer, isAuthenticated, onSignIn }, ref) {
   const containerRef = useRef(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -163,7 +163,9 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
             onVote={onVote}
             onShare={onShare}
             userVotes={userVotes}
-            scale={scale}
+            usedCategories={usedCategories}
+            isAuthenticated={isAuthenticated}
+            onSignIn={onSignIn}
             highlighted={highlighted === submission.id}
           />
         ))}
@@ -218,15 +220,34 @@ const Canvas = forwardRef(function Canvas({ submissions, onVote, onShare, userVo
         </div>
       </div>
 
-      {/* Bottom: add button + surprise + leaderboard */}
+      {/* Bottom: add button + surprise + leaderboard + sign-in */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3">
-        <button
-          onClick={onAddAnswer}
-          className="bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg"
-          style={{ fontFamily: "'DM Sans', sans-serif" }}
-        >
-          ✏️ Add your answer
-        </button>
+        {!isAuthenticated && (
+          <button
+            onClick={onSignIn}
+            className="bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg"
+            style={{ fontFamily: "'DM Sans', sans-serif" }}
+          >
+            Sign in with Google to vote
+          </button>
+        )}
+        {isAuthenticated && (
+          <>
+            <button
+              onClick={onAddAnswer}
+              className="bg-foreground text-background px-6 py-3 rounded-full text-[13px] font-medium hover:opacity-80 transition-opacity flex items-center gap-2 shadow-lg"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              ✏️ Add your answer
+            </button>
+            <div
+              className="px-3 py-1.5 rounded-full text-[11px] bg-white/90 border border-black/10 shadow-sm"
+              style={{ fontFamily: "'DM Sans', sans-serif" }}
+            >
+              {3 - (usedCategories?.size || 0)} votes left
+            </div>
+          </>
+        )}
         <button
           onClick={handleSurprise}
           title="Surprise me"

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/AuthContext";
 import IntroAnimation from "@/components/wall/IntroAnimation";
 import HeroOverlay from "@/components/wall/HeroOverlay";
 import Canvas from "@/components/wall/Canvas";
-import { useRef } from "react";
 import SubmitModal from "@/components/wall/SubmitModal";
 import ShareModal from "@/components/wall/ShareModal";
 import Leaderboard from "@/components/wall/Leaderboard";
@@ -16,24 +16,17 @@ const NOTE_COLORS = [
   "#EDE9FE", "#FFE4E6", "#CFFAFE", "#ECFCCB", "#FED7AA",
 ];
 
-function getBrowserFingerprint() {
-  const nav = navigator;
-  const str = [nav.userAgent, nav.language, screen.width, screen.height, new Date().getTimezoneOffset()].join("|");
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-}
-
 export default function TrustWall() {
   const canvasRef = useRef(null);
   const [showIntro, setShowIntro] = useState(true);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [shareSubmission, setShareSubmission] = useState(null);
-  const [fingerprint] = useState(() => getBrowserFingerprint());
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+
+  const handleSignIn = () => {
+    base44.auth.loginWithProvider("google", window.location.href);
+  };
 
   const { data: submissions = [] } = useQuery({
     queryKey: ["submissions"],
@@ -42,9 +35,9 @@ export default function TrustWall() {
   });
 
   const { data: myVotes = [] } = useQuery({
-    queryKey: ["votes", fingerprint],
-    queryFn: () => base44.entities.Vote.filter({ voter_fingerprint: fingerprint }),
-    enabled: !showIntro,
+    queryKey: ["votes", user?.id],
+    queryFn: () => base44.entities.Vote.filter({ created_by_id: user.id }),
+    enabled: !!user && !showIntro,
   });
 
   const userVotes = myVotes.reduce((acc, v) => {
@@ -52,6 +45,9 @@ export default function TrustWall() {
     acc[v.submission_id].push(v.category);
     return acc;
   }, {});
+
+  // Track which categories the user has already voted in (global, 1 per category)
+  const usedCategories = new Set(myVotes.map(v => v.category));
 
   const submitMutation = useMutation({
     mutationFn: async ({ answer, email, alias }) => {
@@ -86,12 +82,12 @@ export default function TrustWall() {
 
   const voteMutation = useMutation({
     mutationFn: async ({ submissionId, category }) => {
-      const alreadyVoted = userVotes[submissionId]?.includes(category);
-      if (alreadyVoted) return;
+      // Global limit: 1 vote per category across all submissions
+      if (usedCategories.has(category)) return;
       await base44.entities.Vote.create({
         submission_id: submissionId,
         category,
-        voter_fingerprint: fingerprint,
+        voter_fingerprint: user.id,
       });
       const submission = submissions.find(s => s.id === submissionId);
       if (!submission) return;
@@ -105,7 +101,7 @@ export default function TrustWall() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["submissions"] });
-      queryClient.invalidateQueries({ queryKey: ["votes", fingerprint] });
+      queryClient.invalidateQueries({ queryKey: ["votes", user?.id] });
     },
   });
 
@@ -123,7 +119,10 @@ export default function TrustWall() {
       {/* Section 1 — Hero */}
       <div className="relative w-full h-screen overflow-hidden bg-background">
         <HeroOverlay
-          onAddAnswer={() => setShowSubmitModal(true)}
+          onAddAnswer={() => {
+            if (!isAuthenticated) { handleSignIn(); return; }
+            setShowSubmitModal(true);
+          }}
           stats={stats}
         />
       </div>
@@ -133,10 +132,19 @@ export default function TrustWall() {
         <Canvas
           ref={canvasRef}
           submissions={submissions}
-          onVote={(submissionId, category) => voteMutation.mutate({ submissionId, category })}
+          onVote={(submissionId, category) => {
+            if (!isAuthenticated) { handleSignIn(); return; }
+            voteMutation.mutate({ submissionId, category });
+          }}
           onShare={(submission) => setShareSubmission(submission)}
           userVotes={userVotes}
-          onAddAnswer={() => setShowSubmitModal(true)}
+          usedCategories={usedCategories}
+          onAddAnswer={() => {
+            if (!isAuthenticated) { handleSignIn(); return; }
+            setShowSubmitModal(true);
+          }}
+          isAuthenticated={isAuthenticated}
+          onSignIn={handleSignIn}
         />
 
       </div>
